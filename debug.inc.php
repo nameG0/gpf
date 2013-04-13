@@ -51,7 +51,7 @@ function gpfd_file($file)
 		{
 		//初始化
 		$output = date("ymd") . $_SERVER['PHP_SELF'] . '_' . md5($_SERVER['REQUEST_URI']) . '.html';
-		$output = str_replace('/', '_', $output);
+		$output = str_replace(array('/', '\\', ':'), array('_', '_', '_'), $output);
 		if (function_exists('gpf_log'))
 			{
 			$h = "<a href=\"file:///" . GPF_DEBUG_OUTPUT . "{$output}\" target=\"_blank\">{$output}</a>";
