@@ -306,6 +306,7 @@ function _gpfd_js_file($php)
 	//================================ 字符串替换 ===============================
 	$stri = $stro = array();
 	$stri[] = "<!--//jsdebug/init-->";
+	//todo 不需要引入js文件，改为直接把js代码输出在script标签中。
 	$stro[] = '<script type="text/javascript">var GPF_DEBUG_JS_PHP = "' . GPF_DEBUG_JS_PHP . '";</script><script charset="UTF-8" src="' . GPF_DEBUG_JS_SCRIPT . '"></script>';
 	//jsdebug/dump/{var} 记录一个JS变量数据（只支持一个）
 
