@@ -502,6 +502,8 @@ function _gpf_log_flush()
 	$count = count($GLOBALS[$gk_data]);
 	$output = '';
 	$output .= "<br/><font color=blue>Infomation:({$count})</font><hr/><div>\n";
+	//添加运行时间的计算
+	$output .= "<span>runtime:" . gpf_time($_SERVER['REQUEST_TIME']) . "</span><br />\n";
 	foreach ($GLOBALS[$gk_data] as $k => $v)
 		{
 		if (empty($GLOBALS[$gk_output_level][$v['level']]))
