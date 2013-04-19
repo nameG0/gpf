@@ -154,6 +154,9 @@ function gpfd_file($file)
 	 */
 	$pregi[] = '#/\* //debug/testphp(.*?)\*/#s';
 	$prego[] = "if(\$gpf_debug_test){\\1}";
+	//debug/ser/$var 序列化输出$var的值，用于方便地伪造数据（比如$_POST和$_GET）
+	$pregi[] = '#//debug/ser/([^\r\n]*)#';
+	$prego[] = "gpfd_ser('{$filestr}', __LINE__, \$1, '\$1');";
 
 	$php = str_replace($stri, $stro, $php);
 	$php = preg_replace($pregi, $prego, $php);
@@ -163,7 +166,7 @@ function gpfd_file($file)
 
 	//=============================== //debug/f/ 系列扩展函数 ===============================
 	//debug/f/NAME/ARG
-	//debug/f/result/$result
+	//eg. debug/f/result/$result
 	$php = preg_replace_callback('#//debug/f/([^/]*)/([^\r\n]*)#', '_gpfdf_callback', $php);
 
 	$php = _gpfd_js_file($php);
@@ -214,6 +217,17 @@ function gpfd_dump($html, $name)
 	$html .= ob_get_contents();
 	ob_clean();
 	echo $tmp;
+	gpfd_output($html);
+}//}}}
+
+//输出序列化$data的字符串
+function gpfd_ser($f, $l, $data, $name)
+{//{{{
+	$html = "<b>{$f}:{$l} var_export {$name}</b><br />";
+	$html .= "{$name} = unserialize('" . serialize($data) . "';";
+	$html .= '<br />';
+	$html .= "{$name} = " . var_export($data, 1) . ';';
+
 	gpfd_output($html);
 }//}}}
 
