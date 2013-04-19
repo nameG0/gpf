@@ -29,6 +29,7 @@ if (defined('GPF_DEBUG_LOAD'))
 $GLOBALS['gpf_debug_fp'] = NULL; //调试信息输出文件指针
 $GLOBALS['gpf_debug_current_file'] = ''; //当前处理的PHP文件绝对路径
 $GLOBALS['gpf_debug_current_file_urlencode'] = ''; //当前处理的PHP文件绝对路径(经URL编码)
+$GLOBALS['gpf_debug_time'] = array(); //记录运行时间标记
 /**
  * PHP文件开启DEBUG模式入口
  * @param string $file 待调试的PHP文件绝对路径（传入__FILE__即可）
@@ -126,6 +127,15 @@ function gpfd_file($file)
 	//debug/endif/}
 	$pregi[] = '#//debug/if:1:/(.*?)//debug/endif/(.*)#se';
 	$prego[] = "str_replace(array('//debug/if:1:/', '//debug/endif/'), '', '\\0')";
+	//debug/ser/$var 序列化输出$var的值，用于方便地伪造数据（比如$_POST和$_GET）
+	$pregi[] = '#//debug/ser/([^\r\n]*)#';
+	$prego[] = "gpfd_ser('{$filestr}', __LINE__, \$1, '\$1');";
+	//debug/time:NAME 设置计时标记
+	$pregi[] = '#//debug/time:([^\r\n]*)#';
+	$prego[] = "gpfd_time_set('{$filestr}', __LINE__, '\$1');";
+	//debug/time/NAME 计算时间标记，省略NAME表示只计算脚本运行到此时花费的时间
+	$pregi[] = '#//debug/time/([^\r\n]*)#';
+	$prego[] = "gpfd_time('{$filestr}', __LINE__, '\$1');";
 
 	//=============================== 提供简单的测试断言功能 ===============================
 	//debug/test= 测试状态开关,设为1(true)为开，设为0(false)为关
@@ -154,9 +164,6 @@ function gpfd_file($file)
 	 */
 	$pregi[] = '#/\* //debug/testphp(.*?)\*/#s';
 	$prego[] = "if(\$gpf_debug_test){\\1}";
-	//debug/ser/$var 序列化输出$var的值，用于方便地伪造数据（比如$_POST和$_GET）
-	$pregi[] = '#//debug/ser/([^\r\n]*)#';
-	$prego[] = "gpfd_ser('{$filestr}', __LINE__, \$1, '\$1');";
 
 	$php = str_replace($stri, $stro, $php);
 	$php = preg_replace($pregi, $prego, $php);
@@ -228,6 +235,32 @@ function gpfd_ser($f, $l, $data, $name)
 	$html .= '<br />';
 	$html .= "{$name} = " . var_export($data, 1) . ';';
 
+	gpfd_output($html);
+}//}}}
+
+//计算运行时间
+function gpfd_time_set($f, $l, $name)
+{//{{{
+	$gk = 'gpf_debug_time';
+	$GLOBALS[$gk][$name] = gpf_time();
+
+	$html = "<b>{$f}:{$l} set time {$name}</b><br />";
+	gpfd_output($html);
+}//}}}
+function gpfd_time($f, $l, $name)
+{//{{{
+	$gk = 'gpf_debug_time';
+	if ($name)
+		{
+		$begin = $GLOBALS[$gk][$name];
+		}
+	else
+		{
+		$begin = $_SERVER['REQUEST_TIME'];
+		$name = 'REQUEST_TIME';
+		}
+
+	$html = "<b>{$f}:{$l} {$name} - NOW run time " . gpf_time($begin) . "</b><br />";
 	gpfd_output($html);
 }//}}}
 
