@@ -4,3 +4,5 @@
 //debug/time:abc
 //debug/time/abc
 //debug/time/
+?>
+<!--//jsdebug/init-->

@@ -7,7 +7,7 @@
  */
 //环境检查
 $_gpf_check = array(
-	'GPF_DEBUG_PHP', 'GPF_DEBUG_OUTPUT', 'GPF_DEBUG_JS_SCRIPT', 'GPF_DEBUG_JS_SCRIPT', 'GPF_DEBUG_JS_PHP',
+	'GPF_DEBUG_PHP', 'GPF_DEBUG_OUTPUT', 'GPF_DEBUG_JS_PHP',
 	);
 foreach ($_gpf_check as $_v)
 	{
@@ -30,6 +30,7 @@ $GLOBALS['gpf_debug_fp'] = NULL; //调试信息输出文件指针
 $GLOBALS['gpf_debug_current_file'] = ''; //当前处理的PHP文件绝对路径
 $GLOBALS['gpf_debug_current_file_urlencode'] = ''; //当前处理的PHP文件绝对路径(经URL编码)
 $GLOBALS['gpf_debug_time'] = array(); //记录运行时间标记
+$GLOBALS['gpf_debug_js_code'] = ''; //保存从debug.js读出的js代码。
 /**
  * PHP文件开启DEBUG模式入口
  * @param string $file 待调试的PHP文件绝对路径（传入__FILE__即可）
@@ -334,17 +335,21 @@ function _gpfd_js_json($data)
 function _gpfd_js_file($php)
 {//{{{
 	$gk_urlencode = 'gpf_debug_current_file_urlencode';
+	$gk_js_code = 'gpf_debug_js_code';
+	if (!$GLOBALS[$gk_js_code])
+		{
+		$GLOBALS[$gk_js_code] = file_get_contents(dirname(__FILE__) . '/debug.js');
+		}
 	//================================ 字符串替换 ===============================
 	$stri = $stro = array();
 	$stri[] = "<!--//jsdebug/init-->";
-	//todo 不需要引入js文件，改为直接把js代码输出在script标签中。
-	$stro[] = '<script type="text/javascript">var GPF_DEBUG_JS_PHP = "' . GPF_DEBUG_JS_PHP . '";</script><script charset="UTF-8" src="' . GPF_DEBUG_JS_SCRIPT . '"></script>';
-	//jsdebug/dump/{var} 记录一个JS变量数据（只支持一个）
+	$stro[] = "<script type=\"text/javascript\">var GPF_DEBUG_JS_PHP = '" . GPF_DEBUG_JS_PHP . "';\n{$GLOBALS[$gk_js_code]}</script>";
 
 	$php = str_replace($stri, $stro, $php);
 
 	//=============================== 正则替换 ===============================
 	$pregi = $prego = array();
+	//jsdebug/dump/{var} 记录一个JS变量数据（只支持一个）
 	$pregi[] = '#//jsdebug/dump/(\w+)#';
 	$prego[] = '$.post(GPF_DEBUG_JS_PHP + "&jsdebug_file=' . $GLOBALS[$gk_urlencode] . '&jsdebug_line=<?=__LINE__?>&jsdebug_title=\\1", gpf_debug_tojson(\\1), gpf_debug_callback);';
 
