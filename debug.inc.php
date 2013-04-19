@@ -94,7 +94,8 @@ function gpfd_file($file)
 	$stri[] = '__FILE__';
 	$stro[] = "'{$filestr}'";
 
-	//debug/php/php 直接转换为 php 中的 PHP 代码。eg. //debug/php/echo 1;
+	//debug/php/PHP 直接转换为 php 中的 PHP 代码。
+	//eg. //debug/php/echo 1;
 	$pregi[] = '#//debug/php/(.*)#';
 	$prego[] = '\\1';
 	//debug/disable{
@@ -127,6 +128,7 @@ function gpfd_file($file)
 	//debug/endif/}
 	$pregi[] = '#//debug/if:1:/(.*?)//debug/endif/(.*)#se';
 	$prego[] = "str_replace(array('//debug/if:1:/', '//debug/endif/'), '', '\\0')";
+
 	//debug/ser/$var 序列化输出$var的值，用于方便地伪造数据（比如$_POST和$_GET）
 	$pregi[] = '#//debug/ser/([^\r\n]*)#';
 	$prego[] = "gpfd_ser('{$filestr}', __LINE__, \$1, '\$1');";
@@ -137,33 +139,21 @@ function gpfd_file($file)
 	$pregi[] = '#//debug/time/([^\r\n]*)#';
 	$prego[] = "gpfd_time('{$filestr}', __LINE__, '\$1');";
 
-	//=============================== 提供简单的测试断言功能 ===============================
-	//debug/test= 测试状态开关,设为1(true)为开，设为0(false)为关
-	//debug/test=1
-	$pregi[] = '#//debug/test=(.*?)/(.*)#';
-	$prego[] = "if(defined('GPF_TEST')){ \$gpf_debug_test = \\1; gpfd_test_name('{$filestr}', __LINE__, \$gpf_debug_test, '\\2'); }//";
-	//debug/test/[断言] 测试断言，会向浏览器直接输出断言结果
-	//debug/test/1 === 1
-	$pregi[] = '#//debug/test/([^\r\n]*)#';
-	$prego[] = 'if ($gpf_debug_test) { gpfd_test(\\1, \'' . $GLOBALS[$gk_file] . '\', __LINE__); }';
-	//debug/testif/[断言条件]/[断言] 按条件进行测试断言
-	//debug/testif/$open == 1/$close == 1
-	$pregi[] = '#//debug/testif/([^/]*)/([^\r\n]*)#';
-	$prego[] = 'if ($gpf_debug_test && \\1) { gpfd_test(\\2, \'' . $GLOBALS[$gk_file] . '\', __LINE__); }';
+	//=============================== 单元测试辅助 ===============================
 	//debug/testoff{
-	//PHP_CODE 测试开启时不运行的PHP代码
+	//PHP_CODE 测试开启（定义了GPF_TEST常量）时不运行的PHP代码
 	//debug/testoff}
 	$pregi[] = '#//debug/testoff{(.*?)//debug/testoff}#se';
-	$prego[] = "str_replace(array('//debug/testoff{', '//debug/testoff}'), array('if(!\$gpf_debug_test){', '}'), '\\0');";
+	$prego[] = "str_replace(array('//debug/testoff{', '//debug/testoff}'), array('if(!defined('GPF_TEST')){', '}'), '\\0');";
 	//debug/testphp/PHP_CODE 测试开启时运行的PHP代码（单行）
 	//debug/testphp/echo 1;
 	$pregi[] = '#//debug/testphp/#';
-	$prego[] = 'if($gpf_debug_test) ';
+	$prego[] = 'if(defined("GPF_TEST")) ';
 	/* //debug/testphp 测试开启时运行的PHP代码段（可多行）
 	 PHP_CODE
 	 */
 	$pregi[] = '#/\* //debug/testphp(.*?)\*/#s';
-	$prego[] = "if(\$gpf_debug_test){\\1}";
+	$prego[] = "if(defined('GPF_TEST')){\\1}";
 
 	$php = str_replace($stri, $stro, $php);
 	$php = preg_replace($pregi, $prego, $php);
@@ -265,20 +255,14 @@ function gpfd_time($f, $l, $name)
 }//}}}
 
 //测试断言
-function gpfd_test($test, $f, $l)
+function gpfd_test($test)
 {//{{{
+	$trace = debug_backtrace(0);
+	$f = $trace[0]['file'];
+	$l = $trace[0]['line'];
 	$color = $test ? 'green' : 'red';
 	?><p style="color:<?=$color?>"><?=$test ? 'TRUE' : 'FALSE'?> <?=$f?>:<?=$l?></p>
 <?php
-}//}}}
-//显示测试项名称及开启状态
-function gpfd_test_name($f, $l, $is_test, $name)
-{//{{{
-	?>
-	<div style="color:<?=$is_test ? 'green' : 'blue'?>">
-		[<?=$is_test ? '开启' : '关闭'?>] <?=$name?> <?=$f?>:<?=$l?>
-	</div>
-	<?php
 }//}}}
 
 //=============================== JS DEBUG ===============================
