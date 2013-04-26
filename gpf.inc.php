@@ -1541,86 +1541,11 @@ function gpf_time($time = NULL)
 	return $mt - $time;
 }//}}}
 
-//=============================== gpf_static ===============================
-/**
- * 把$path+$dir所指向目录内的所有文件全复制到GPF_STATIC_DIR常量所指向的目录中。
- * <pre>
- * 需定义常量：
- * GPF_STATIC_DIR :/public/ 目录路径。
- * </pre>
- * @param string $path 起始目录。以/结尾,比如网站根目录,
- * @param string $dir 后续目录，eg. 0lib/gpf/ eg. 0module/main/
- */
-function gpf_static($path, $dir)
-{//{{{
-	if (!defined('GPF_STATIC_DIR'))
-		{
-		//debug/testphp/$GLOBALS['t_static_not_dir'] = true;
-		gpf_log('!defined GPF_STATIC_DIR', GPF_LOG_FLOW, __FILE__, __LINE__, __FUNCTION__);
-		return false;
-		}
-	//debug/testphp/$GLOBALS['t_static_not_dir'] = false;
-	$sour = $path . $dir;
-	$to = GPF_STATIC_DIR . $dir;
-	//debug/testphp/$GLOBALS['t_static_sour'] = $sour;
-	//debug/testphp/$GLOBALS['t_static_to'] = $to;
-	//debug/dump/$sour, $to
-	if (!is_dir($sour))
-		{
-		//debug/testphp/$GLOBALS['t_static_not_sour'] = true;
-		return false;
-		}
-	//debug/testphp/$GLOBALS['t_static_not_sour'] = false;
-	$is_copy = false;
-	//debug/testphp/$GLOBALS['t_static_not_to'] = false;
-	//debug/testphp/$GLOBALS['t_static_switch'] = false;
-	if (!is_dir($to))
-		{
-		//debug/testphp/$GLOBALS['t_static_not_to'] = true;
-		$is_copy = true;
-		}
-	else if (defined('GPF_STATIC_SWITCH') && true === GPF_STATIC_SWITCH)
-		{
-		//debug/testphp/$GLOBALS['t_static_switch'] = true;
-		$is_copy = true;
-		}
-	//debug/testphp/$GLOBALS['t_static_is_copy'] = $is_copy;
-
-	if (!$is_copy)
-		{
-		gpf_log('!copy', GPF_LOG_FLOW, __FILE__, __LINE__, __FUNCTION__);
-		return false;
-		}
-	gpf_log($dir, GPF_LOG_FLOW, __FILE__, __LINE__, __FUNCTION__);
-	_gpf_static_copy($sour, $to);
-	return true;
-}//}}}
-function gpf_mod_static($mod)
-{//{{{
-	//debug/test=1/gpf_mod_static
-	$GPF_MODULE = GPF_MODULE;
-	//debug/testphp/($GLOBALS['GPF_MODULE'] AND $GPF_MODULE = $GLOBALS['GPF_MODULE']);
-	$dir = dirname($GPF_MODULE) . '/';
-	$base = basename($GPF_MODULE);
-	//zjq@20130405 模块内使用0static目录保存所有静态资源文件
-	gpf_static($dir, "{$base}/{$mod}/0static");
-}//}}}
-function gpf_lib_static($lib)
-{//{{{
-	//debug/test=1/gpf_lib_static
-	$GPF_LIB = GPF_LIB;
-	//debug/testphp/($GLOBALS['GPF_LIB'] AND $GPF_LIB = $GLOBALS['GPF_LIB']);
-	$dir = dirname($GPF_LIB) . '/';
-	$base = basename($GPF_LIB);
-	//zjq@20130405 每个lib内使用0static目录保存所有静态资源文件
-	gpf_static($dir, "{$base}/{$lib}/0static");
-}//}}}
 /**
  * 只复制更新过的文件，因为“复制”操作很耗时。
  */
-function _gpf_static_copy($sour, $to)
+function gpf_copy($sour, $to)
 {//{{{
-	//debug/test=1/function__gpf_static_copy
 	if (is_dir($sour))
 		{
 		if ('/' !== substr($sour, -1))
@@ -1643,7 +1568,7 @@ function _gpf_static_copy($sour, $to)
 				$entry .= '/';
 				}
 			//debug/dump/$sour . $entry, $to . $entry
-			_gpf_static_copy($sour . $entry, $to . $entry);
+			gpf_copy($sour . $entry, $to . $entry);
 			}
 		$handle->close();
 		return ;
