@@ -175,7 +175,7 @@ function gpf_factory($name)
 			$error = "配置文件未正确返回数据 {$path}";
 			break;
 			}
-		$file = $config['0target'];
+		$file = $config['0file'];
 		$func_name = $config['0func'];
 		if (!$file || !$func_name)
 			{
@@ -195,7 +195,7 @@ function gpf_factory($name)
 		gpf_inc($file);
 		if (!function_exists($func_name))
 			{
-			$error = "0func_name 函数未定义 {$func_name}";
+			$error = "0func 函数未定义 {$func_name}";
 			break;
 			}
 		}
