@@ -149,7 +149,7 @@ function gpf_load($pathfull, $class_name = '')
 //=============================== factory ===============================
 /**
  * 简单的工厂函数
- * 使用 GPF_FACTORY 常量定义工厂配置文件目录, eg. /config/gpf_factory/
+ * 使用 GPF_FACTORY 常量定义工厂配置文件目录, eg. define('GPF_FACTORY', '/config/gpf_factory/');
  * @param string $name 配置文件名 eg. db
  */
 function gpf_factory($name)
@@ -175,34 +175,27 @@ function gpf_factory($name)
 			$error = "配置文件未正确返回数据 {$path}";
 			break;
 			}
-		$target = $config['0target'];
+		$file = $config['0target'];
 		$func_name = $config['0func'];
-		$dir = $config['0dir'];
-		if (!$target || !$func_name)
+		if (!$file || !$func_name)
 			{
-			$error = "配置文件缺少 0target 或 0func 配置项 {$path}";
+			$error = "配置文件缺少 0file 或 0func 配置项 {$path}";
 			break;
 			}
-		$func_name = "cb_gpf_factory_{$func_name}";
 		if (function_exists($func_name))
 			{
 			break;
 			}
 		//加载cb函数定义文件
-		if (!$dir)
+		if (!is_file($file))
 			{
-			$dir = MODULE_PATH;
-			}
-		$cb_path = "{$dir}{$target}/0cb_gpf_factory/func.php";
-		if (!is_file($cb_path))
-			{
-			$error = "cb文件不存在 {$cb_path}";
+			$error = "0file 文件不存在 {$file}";
 			break;
 			}
-		gpf_inc($cb_path);
+		gpf_inc($file);
 		if (!function_exists($func_name))
 			{
-			$error = "cb函数未定义 {$func_name}";
+			$error = "0func_name 函数未定义 {$func_name}";
 			break;
 			}
 		}
