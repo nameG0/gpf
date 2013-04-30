@@ -17,17 +17,15 @@
 //建议放在config目录中。
 defined('GPF_FACTORY') OR define('GPF_FACTORY', GPF_CONFIG . 'gpf_factory/');
 //debug模式开关
-//GPF_DEBUG
+//GPF_DEBUG bool
 //debug模式时生成的php临时文件存放路径
-//GPF_DEBUG_PHP
+//GPF_DEBUG_PHP string
 //debug模式输出信息文件存放路径
-//GPF_DEBUG_OUTPUT
-//debug.js请求路径
-//GPF_DEBUG_JS_SCRIPT
+//GPF_DEBUG_OUTPUT string
 //调用gpfd_js处理请求的PHP文件访问路径（必须带有?号）
-//GPF_DEBUG_JS_PHP
-//断言测试模式开关
-//GPF_TEST
+//GPF_DEBUG_JS_PHP string
+//测试模式开关
+//GPF_TEST bool
 
 //============================== inc ===============================
 $GLOBALS['gpf_inc'] = array(); //保存已加载过的文件标记。
@@ -602,95 +600,95 @@ function gpf_err_get()
 
 //============================== hook ==============================
 $GLOBALS['gpf_obj_callback'] = array();
+$GLOBALS['gpf_hook_list_path'] = array();
 /**
  * 加载并返回 callback 对象数组。
  * <pre>
- * 提供给 hook 类使用，调用格式：$list = gpf_hook(mod_name, __CLASS__, __FUNCTION__);
+ * 提供给 hook 类使用，调用格式：$list = gpf_hook($callback_list_path, __CLASS__, __FUNCTION__);
  * </pre>
+ * @param string $callback_list_path 定义了所有挂载到hook的类所在目录的文件绝对路径
  * @param string $class_name hook 类完整类名，一般使用 __CLASS__。eg. h_member_base
+ * @return array
  */
-function gpf_hook($mod_name, $class_name, $func_name)
+function gpf_hook($callback_list_path, $class_name, $func_name)
 {//{{{
 	$gk_callback = 'gpf_obj_callback';
+	$gk_list_path = 'gpf_hook_list_path';
 
-	if (!isset($GLOBALS[$gk_callback]["{$mod_name}/{$class_name}"]))
+	do
 		{
-		$GLOBALS[$gk_callback]["{$mod_name}/{$class_name}"] = _gpf_hook_callback($mod_name, $class_name);
-		}
-	$obj_list = array();
-	foreach ($GLOBALS[$gk_callback]["{$mod_name}/{$class_name}"] as $_obj)
-		{
-		if (method_exists($_obj, $func_name))
+		$list_path = array();
+		$list_path_key = isset($callback_list_path[32]) ? md5($callback_list_path) : $callback_list_path;
+		//debug/php/$GLOBALS['t_hmf_is_cache'] = false;
+		if (isset($GLOBALS[$gk_list_path][$list_path_key]))
 			{
-			$obj_list[] = $_obj;
+			//debug/php/$GLOBALS['t_hmf_is_cache'] = true;
+			$list_path = $GLOBALS[$gk_list_path][$list_path_key];
+			break;
 			}
+
+		if (is_file($callback_list_path))
+			{
+			$list_path = include $callback_list_path;
+			}
+		$GLOBALS[$gk_list_path][$list_path_key] = $list_path;
 		}
-	return $obj_list;
-}//}}}
-/**
- * 加载一个模块的一个 callback 对象
- * @param string hook 模块名
- * @param string $class_name eg. h_member_base
- * @param array 对象列表
- */
-function _gpf_hook_callback($mod_name, $class_name)
-{//{{{
-	$mod_callback = _gpf_hook_mod_file($mod_name);
-	if (!$mod_callback)
+	while(false);
+	if (!is_array($list_path) || !$list_path)
 		{
 		return array();
 		}
-	//eg. h_member_base > member_base
-	$class_name_short = substr($class_name, 2);
-	$obj_callback = array();
-	foreach ($mod_callback as $_mod)
+
+	do
 		{
-		$class_name_full = "hc_{$_mod}_{$class_name_short}";
-		if (!class_exists($class_name_full))
+		$obj_list = array();
+		//debug/php/$GLOBALS['t_gpf_hook_obj_list_cache'] = false;
+		if (isset($GLOBALS[$gk_callback][$class_name]))
 			{
-			$_path = GPF_MODULE . "{$_mod}/0hook/hc_{$class_name_short}.class.php";
-			if (!is_file($_path))
-				{
-				gpf_log("hook_callback 文件不存在[{$_path}]", GPF_LOG_WARN, __FILE__, __LINE__, __FUNCTION__);
-				continue;
-				}
-			//debug/dump/$_path
-			gpf_inc($_path);
+			//debug/php/$GLOBALS['t_gpf_hook_obj_list_cache'] = true;
+			$obj_list = $GLOBALS[$gk_callback][$class_name];
+			break;
+			}
+		//eg. h_member_base > member_base
+		$class_name_short = substr($class_name, 2);
+		foreach ($list_path as $_mod => $dir)
+			{
+			$class_name_full = "hc_{$_mod}_{$class_name_short}";
 			if (!class_exists($class_name_full))
 				{
-				gpf_log("callback 类未定义[{$class_name_full}]", GPF_LOG_ERROR, __FILE__, __LINE__, __FUNCTION__);
-				continue;
+				$_path = "{$dir}/hc_{$class_name_short}.class.php";
+				if (!is_file($_path))
+					{
+					gpf_log("hook_callback 文件不存在[{$_path}]", GPF_LOG_WARN, __FILE__, __LINE__, __FUNCTION__);
+					continue;
+					}
+				//debug/dump/$_path
+				gpf_inc($_path);
+				if (!class_exists($class_name_full))
+					{
+					gpf_log("callback 类未定义[{$class_name_full}]", GPF_LOG_ERROR, __FILE__, __LINE__, __FUNCTION__);
+					continue;
+					}
 				}
+			$obj_list[] = new $class_name_full();
 			}
-		$obj_callback[] = new $class_name_full();
+		$GLOBALS[$gk_callback][$class_name] = $obj_list;
 		}
-	return $obj_callback;
-}//}}}
-$GLOBALS['gpf_hook_mod_file'] = array();
-/**
- * 加载模块 hook 目录 mod 文件
- * @param array 挂钩的模块列表。
- */
-function _gpf_hook_mod_file($mod_name)
-{//{{{
-	$gk = 'gpf_hook_mod_file';
-	//debug/php/$GLOBALS['t_hmf_is_cache'] = false;
-	if (isset($GLOBALS[$gk][$mod_name]))
+	while(false);
+	if (!is_array($obj_list) || !$obj_list)
 		{
-		//debug/php/$GLOBALS['t_hmf_is_cache'] = true;
-		return $GLOBALS[$gk][$mod_name];
+		return array();
 		}
-	$GLOBALS[$gk][$mod_name] = array();
 
-	$_path = GPF_MODULE . "{$mod_name}/0hook/mod";
-	//debug/dump/$_path
-	if (is_file($_path))
+	$ret = array();
+	foreach ($obj_list as $_obj)
 		{
-		$list = file($_path);
-		//debug/dump/$list
-		$GLOBALS[$gk][$mod_name] = array_filter(array_map('trim', $list));
+		if (method_exists($_obj, $func_name))
+			{
+			$ret[] = $_obj;
+			}
 		}
-	return $GLOBALS[$gk][$mod_name];
+	return $ret;
 }//}}}
 
 //============================== url ==============================
@@ -1303,48 +1301,6 @@ function gpfig_set($name, $value)
 function gpfip_set($name, $value)
 {//{{{
 	$GLOBALS['gpf_post'][$name] = $value;
-}//}}}
-
-//zjq@2013-03-20 todo 等待重写为filter系列函数
-//调用过滤函数
-//强制类型转换可以这样写：(int), (array),注意要用小写字母。
-//array_filter(array_map('intval', (array)$arr)) 可以这样写：(array),intval,@array_filter
-function _gpf_input_filter($value, $filter)
-{//{{{
-	if ($filter)
-		{
-		$list = explode(",", $filter);
-		foreach ($list as $v)
-			{
-			//函数名前加@表示函数参数要求为数组。比如 array_filter
-			if ('@' === $v[0])
-				{
-				$v = substr($v, 1);
-				$value = $v($value);
-				}
-			else if ('(' === $v[0])
-				{
-				//强制类型转换使用 () 表示，比如 (array)
-				if ('(array)' === $v)
-					{
-					$value = (array)$value;
-					}
-				else if ('(int)' === $v)
-					{
-					$value = (int)$value;
-					}
-				else if ('(string)' === $v)
-					{
-					$value = (string)$value;
-					}
-				}
-			else
-				{
-				$value = _gpf_input_call($value, $v);
-				}
-			}
-		}
-	return $value;
 }//}}}
 
 //============================== module ==============================

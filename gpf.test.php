@@ -19,6 +19,7 @@ if (!is_dir(GPF_DEBUG_OUTPUT))
 	mkdir(GPF_DEBUG_PHP);
 	}
 
+//测试 gpf_copy 功能
 function test_gpf_copy()
 {//{{{
 	$is_ok = is_dir(GPF_RUNTIME) && is_writable(GPF_RUNTIME);
@@ -53,4 +54,29 @@ function test_gpf_copy()
 
 	`rm -rf {$_dir777}`;
 }//}}}
-test_gpf_copy();
+// test_gpf_copy();
+
+//测试 gpf_hook 功能
+function test_gpf_hook()
+{//{{{
+	$list = gpf_hook(dirname(__FILE__) . 'notexists.notexists', 'h_hook_hook', 'test_call');
+	gpfd_test(array() === $list, __FILE__,__LINE__);
+	gpfd_test(false === $GLOBALS['t_hmf_is_cache'],__FILE__,__LINE__);
+	$list = gpf_hook(dirname(__FILE__) . 'notexists.notexists', 'h_hook_hook', 'test_call');
+	gpfd_test(true === $GLOBALS['t_hmf_is_cache'],__FILE__,__LINE__);
+
+	$callback_list_path = dirname(__FILE__) . "/0test/hook/hook.inc.php";
+
+	$list = gpf_hook($callback_list_path, 'h_hook_hook', 'test_call');
+	gpfd_test(count($list) === 1,__FILE__,__LINE__);
+	gpfd_test('hc_hook_hook_hook' === $list[0]->name, __FILE__,__LINE__);
+	gpfd_test(false===$GLOBALS['t_gpf_hook_obj_list_cache'],__FILE__,__LINE__);
+
+	$list = gpf_hook($callback_list_path, 'h_hook_hook', 'test_call');
+	gpfd_test(true===$GLOBALS['t_gpf_hook_obj_list_cache'],__FILE__,__LINE__);
+
+	$hook = gpf_load(dirname(__FILE__) . '/0test/hook/h_hook.class', 'h_hook_hook');
+	$hook->test_call();
+	gpfd_test(true===$GLOBALS['t_hook_test_call'], __FILE__,__LINE__);
+}//}}}
+test_gpf_hook();
