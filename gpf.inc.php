@@ -113,7 +113,7 @@ function gpf_obj($name, $obj = NULL)
 //=============================== load
 /**
  * 加载func,class等定义类文件，若为class定义文件，传入$class_name可以顺便实例化（只实例化一次）
- * @param string $pathfull 待加载文件的绝对路径,但不需要最后的“.php”
+ * @param string $pathfull 待加载文件的绝对路径
  * @param string $class_name 顺便实例化的类名
  */
 function gpf_load($pathfull, $class_name = '')
@@ -135,7 +135,6 @@ function gpf_load($pathfull, $class_name = '')
 			}
 		}
 	//加载文件
-	$pathfull = $pathfull . '.php';
 	gpf_inc($pathfull);
 	if ($class_name)
 		{
