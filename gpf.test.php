@@ -75,7 +75,7 @@ function test_gpf_hook()
 	$list = gpf_hook($callback_list_path, 'h_hook_hook', 'test_call');
 	gpfd_test(true===$GLOBALS['t_gpf_hook_obj_list_cache'],__FILE__,__LINE__);
 
-	$hook = gpf_load(dirname(__FILE__) . '/0test/hook/h_hook.class', 'h_hook_hook');
+	$hook = gpf_load(dirname(__FILE__) . '/0test/hook/h_hook.class.php', 'h_hook_hook');
 	$hook->test_call();
 	gpfd_test(true===$GLOBALS['t_hook_test_call'], __FILE__,__LINE__);
 }//}}}
