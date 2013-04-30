@@ -6,16 +6,6 @@
  * @filesource
  */
 //============================== define ===============================
-//缩短 DIRECTORY_SEPARATOR
-(defined('DS') OR define('DS', DIRECTORY_SEPARATOR));
-//默认gpf以一个模块的形式出现，所以可以定义默认的目录常量。
-(defined('GPF_MODULE') OR define('GPF_MODULE', dirname(dirname(__FILE__)) . '/'));
-//建议CONFIG目录放到module目录外
-(defined('GPF_CONFIG') OR define('GPF_CONFIG', dirname(GPF_MODULE) . '/config/'));
-//建议LIB目录放到module目录外
-(defined('GPF_LIB') OR define('GPF_LIB', dirname(GPF_MODULE) . '/0lib/'));
-//建议放在config目录中。
-defined('GPF_FACTORY') OR define('GPF_FACTORY', GPF_CONFIG . 'gpf_factory/');
 //debug模式开关
 //GPF_DEBUG bool
 //debug模式时生成的php临时文件存放路径
@@ -1302,17 +1292,6 @@ function gpfip_set($name, $value)
 	$GLOBALS['gpf_post'][$name] = $value;
 }//}}}
 
-//============================== module ==============================
-/**
- * 加载模块内的定类文件(调用 gpf_load() 实现)
- * @param string $path 从GPF_MODULE目录开始的相对路径。eg. gpf/gpf.inc.php
- */
-function gpf_mod_load($path, $class_name = '')
-{//{{{
-	$pathfull = GPF_MODULE . $path;
-	return gpf_load($pathfull, $class_name);
-}//}}}
-
 //============================== other ==============================
 /**
  * 计算运行时间
@@ -1431,8 +1410,10 @@ function gpf_ctrl($mod, $file, $action, $in = array())
 	(empty($in['func_init']) AND $in['func_init'] = "_{$in['type']}init");
 	//处理请求方法名, eg. action_index
 	(empty($in['func']) AND $in['func'] = $in['type'] . $action);
+	//模块文件夹路径
+	(empty($in['mod_dir']) AND $in['mod_dir'] = "0module/");
 	//控制器文件路径
-	(empty($in['path']) AND $in['path'] = GPF_MODULE . "{$mod}/{$in['dir']}/{$file}.class.php");
+	(empty($in['path']) AND $in['path'] = "{$in['mod_dir']}{$mod}/{$in['dir']}/{$file}.class.php");
 	gpf_log(var_export($in, true), GPF_LOG_INFO, __FILE__, __LINE__, __FUNCTION__);
 
 	//实例化
@@ -1485,6 +1466,8 @@ function gpf_ctrl($mod, $file, $action, $in = array())
 	$ctrl->$in['func']();
 }//}}}
 
+//=============================== debug ===============================
+
 /**
  * 对一个PHP文件开启GPF DEBUG模式
  * 调用方法：让PHP文件内第一条执行语句为（注意大小写）
@@ -1514,18 +1497,4 @@ function gpf_debug_js()
 		require dirname(__FILE__). '/debug.inc.php';
 		}
 	gpfd_js();
-}//}}}
-
-/**
- * 用于引用外部代码（lib）文件（单次包含）
- * @param string $path 文件（或目录），不需要最后的“.php”，若以“/”结尾，自动加上init.inc.php
- */
-function gpf_lib_load($path, $class_name = '')
-{//{{{
-	if ('/' === substr($path, -1, 1))
-		{
-		$path .= 'init.inc';
-		}
-	$pathfull = GPF_LIB . $path;
-	return gpf_load($pathfull, $class_name);
 }//}}}
